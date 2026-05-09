@@ -1,13 +1,91 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Distributor {
+  id            String   @id @default(cuid())
+  firmName      String
+  contactName   String
+  phone         String
+  email         String?
+  gstin         String?
+  city          String
+  state         String
+  territory     String?
+  creditDays    Int      @default(0)
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+
+  orders        Order[]
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  name              String
+  sku               String   @unique
+  category          String
+  description       String?
+  mrp               Float
+  distributorPrice  Float
+  gstPercent        Float    @default(18)
+  cartonQty         Int
+  moqCartons        Int
+  weightInGram      Float?
+  imageUrl          String?
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+
+  orderItems        OrderItem[]
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  orderNumber    String   @unique
+  distributorId  String
+  subtotal       Float
+  gstAmount      Float
+  shippingAmount Float   @default(0)
+  totalAmount    Float
+  paidAmount     Float   @default(0)
+  status         String  @default("PENDING")
+  createdAt      DateTime @default(now())
+
+  distributor    Distributor @relation(fields: [distributorId], references: [id])
+  items          OrderItem[]
+  payments       Payment[]
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  productId   String
+  cartons     Int
+  pieces      Int
+  unitPrice   Float
+  total       Float
+
+  order       Order   @relation(fields: [orderId], references: [id])
+  product     Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+
+  orderId       String
+
+  amount        Float
+
+  paymentMode   String
+
+  referenceNo   String?
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+
+  order         Order @relation(fields: [orderId], references: [id])
 }
